@@ -5,6 +5,11 @@
    └ WSGI      ...uWSGI
       └ Server ...NGINX
 
+* Prerequisites
+** Docker
+   https://www.docker.com/get-started
+** jq
+   https://stedolan.github.io/jq/download/
 * Usage
 ** Run Script
 *** set parameter
