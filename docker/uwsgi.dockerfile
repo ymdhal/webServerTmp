@@ -34,12 +34,8 @@ RUN mkdir /run/openrc &&\
   sed -i 's/cgroup_add_service /# cgroup_add_service /g' /lib/rc/sh/openrc-run.sh &&\
   touch /run/openrc/softlevel
 
-# 依存Pythonライブラリ一覧コピー
-COPY ./requirements.txt ./
-
 # 依存Pythonライブラリインストール
-RUN pip install --no-cache-dir -r requirements.txt && \
-  rm -f requirements.txt
+RUN pip install --no-cache-dir flask
 
 #WORKDIR /home
 #WORKDIR /var/www/src
