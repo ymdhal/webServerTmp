@@ -1,0 +1,12 @@
+{
+    "MASSAGE" : {
+        "LOGIN" : {
+            "WRONG" :"",
+            "UNAUTH" :"Unauthorized , Please login"
+        }
+    },
+    "HTML" : {
+        "LANG" : "ja",
+        "CHAR" : "utf-8"
+    }
+}

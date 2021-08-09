@@ -1,0 +1,33 @@
+* WebServerTemplate
+** 全体構成
+   App          ...Flask
+   ├ DB        ...mariaDB
+   └ WSGI      ...uWSGI
+      └ Server ...NGINX
+
+* Usage
+** Run Script
+*** set parameter
+    #+INCLUDE: "./run.sh" src bash :range-begin "### USR ###" :range-end "^#":lines "4-10"
+   
+*** run
+   #+begin_src shell
+     ./run.sh
+   #+end_src
+  
+* Details
+** Script
+*** LOG
+   #+INCLUDE: "./run.sh" src bash :range-begin "### LOG ###" :range-end "^#":lines "22-32"
+   tee コマンドで標準出力 1,2 をファイルへ並列出力
+*** SETUP
+   #+INCLUDE: "./run.sh" src bash :range-begin "### SETUP ###" :range-end "^#":lines "32-41"
+   docker 起動時に実行する設定スクリプトを用意.各ブロックで必要であればここに処理を追加する.
+*** DB
+   #+INCLUDE: "./run.sh" src bash :range-begin "### DB ###" :range-end "^#":lines "41-52"
+   
+** Flask
+   
+** mariaDB
+** uWSGI
+** NGINX

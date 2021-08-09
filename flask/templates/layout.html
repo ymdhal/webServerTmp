@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+
+<!-- LANGUAGE -->
+{% if dict_conf is defined %}
+    <html lang={{ dict_conf["HTML"]["LANG"] }}>
+{% else %}
+    <html lang="en">
+{% endif %}
+
+
+<head>
+    <!-- META -->
+    <!-- CHARSET -->
+    {% if dict_conf is defined %}
+        <meta charset={{ dict_conf["HTML"]["CHAR"] }}>
+    {% else %}
+        <meta charset="Shift_JIS">
+    {% endif %}
+    <!-- FAVICON -->
+    <link rel="icon" href="{{url_for("static", filename="images/favicon.ico")}}">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{url_for("static", filename="style.css")}}">
+    <!-- JS -->
+    <script src="{{url_for("static", filename="index.js")}}"></script>
+    <!-- INDIVISUAL -->
+    {% block head%}{% endblock %}
+    <!-- Bootstrap -->
+</head>
+<body>
+    {% block content %}{% endblock %}
+</body>
+</html>
