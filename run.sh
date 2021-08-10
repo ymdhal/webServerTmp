@@ -10,13 +10,15 @@ public_port=8020
 run_dir="$(pwd)"
 app_dir="$run_dir/flask"
 db_dir="$run_dir/mariadb"
+wsgi_dir="$run_dir/uwsgi"
 docker_dir="$run_dir/docker"
-jsonfile="./common.json"
+jsonfile="$app_dir/conf/common.json"
+uwsgi_file=$wsgi_dir/uwsgi.ini
 
 ### SEVER ###
 server_root="/var/www"
 server_tmp="/tmp"
-internal_port=8010
+internal_port=8030
 
 #------------------------------------------------------------------------------------------------
 ### LOG ###
@@ -50,9 +52,34 @@ echo "cat $server_tmp/init.sql | mysql" >> $setup_file
 
 #------------------------------------------------------------------------------------------------
 ### APP ###
-cat $app_dir/requirements.txt  > $setup_dir/requirements.txt
+cat $app_dir/requirements.txt  >  $setup_dir/requirements.txt
+#echo "pip install -r $server_tmp/requirements.txt" >> $setup_file
+#echo "python app.py" >> $setup_file
+
+#------------------------------------------------------------------------------------------------
+### WSGI ###
+cat $wsgi_dir/requirements.txt  >> $setup_dir/requirements.txt
 echo "pip install -r $server_tmp/requirements.txt" >> $setup_file
-echo "python app.py" >> $setup_file
+#echo "uwsgi --json $server_root/uwsgi.json" >> $setup_file
+echo "uwsgi --ini $server_root/uwsgi.ini" >> $setup_file
+
+echo " -> replace uwsgi.ini"
+echo \
+"[uwsgi]
+wsgi-file = $server_root/src/app.py
+pidfile = $server_root/%n.pid
+logto = $server_root/%n.log
+http = :$internal_port
+#socket = $server_root/%n.sock
+chmod-socket = 666
+callable = app
+master = true
+processes = 8
+vacuum = true
+die-on-term = true
+py-autoreload = 1
+" > $uwsgi_file
+
 
 #------------------------------------------------------------------------------------------------
 ### JSON ###
@@ -63,17 +90,20 @@ cat $jsonfile | jq '.COMMON.DEBUG|='${flask_debug}'' > tmp.json && mv tmp.json $
 
 cat $jsonfile | jq '.FW.PORT|='${internal_port}'' > tmp.json && mv tmp.json $jsonfile
 
-tmp_jsonfile=$app_dir/conf/common.json
-
-cp -f $jsonfile $tmp_jsonfile
+#tmp_jsonfile=$app_dir/conf/common.json
+#
+#cp -f $jsonfile $tmp_jsonfile
 #------------------------------------------------------------------------------------------------
 ### DOCKER ###
-dockerfile="$docker_dir/flask.dockerfile"
+#dockerfile="$docker_dir/flask.dockerfile"
+dockerfile="$docker_dir/uwsgi.dockerfile"
+
 tag_name=$scenario
 container_name="${scenario}_con"
 volume="\
-  -v $app_dir:$server_root \
-  -v $db_dir/volume:$server_root/database \
+  -v $wsgi_dir:$server_root \
+  -v $app_dir:$server_root/src \
+  -v $db_dir/volume:$server_root/src/database \
   -v $setup_dir:$server_tmp \
 "
 

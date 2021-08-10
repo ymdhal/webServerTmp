@@ -1,9 +1,22 @@
+#+TITLE: WebServerTemplate
+#+AUTHOR: ymd
+#+OPTIONS: \n:t num:nil
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="http://www.pirilampo.org/styles/readtheorg/css/htmlize.css"/>
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="http://www.pirilampo.org/styles/readtheorg/css/readtheorg.css"/>
+#+HTML_HEAD: <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+#+HTML_HEAD: <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+#+HTML_HEAD: <script type="text/javascript" src="http://www.pirilampo.org/styles/lib/js/jquery.stickytableheaders.js"></script>
+#+HTML_HEAD: <script type="text/javascript" src="http://www.pirilampo.org/styles/readtheorg/js/readtheorg.js"></script>
+
+
 * WebServerTemplate
 ** 全体構成
+   #+begin_src
    App          ...Flask
    ├ DB        ...mariaDB
    └ WSGI      ...uWSGI
       └ Server ...NGINX
+   #+end_src
 
 * Prerequisites
 ** Docker
@@ -21,15 +34,20 @@
    #+end_src
   
 * Details
+** Dockerfile
+*** Flask
+*** nginx
+*** uwsgi
+    nginx などの WebServer で http を受けたあとであれば、http のポートを使用せず、 Unix ソケットで nginx-uwsgi 間通信するほうがオーバーヘッドが少なくて済みます
 ** Script
 *** LOG
-   #+INCLUDE: "./run.sh" src bash :range-begin "### LOG ###" :range-end "^#":lines "22-32"
+   #+INCLUDE: "./run.sh" src bash :range-begin "### LOG ###" :range-end "^#":lines "24-34"
    tee コマンドで標準出力 1,2 をファイルへ並列出力
 *** SETUP
-   #+INCLUDE: "./run.sh" src bash :range-begin "### SETUP ###" :range-end "^#":lines "32-41"
+   #+INCLUDE: "./run.sh" src bash :range-begin "### SETUP ###" :range-end "^#":lines "34-43"
    docker 起動時に実行する設定スクリプトを用意.各ブロックで必要であればここに処理を追加する.
 *** DB
-   #+INCLUDE: "./run.sh" src bash :range-begin "### DB ###" :range-end "^#":lines "41-52"
+   #+INCLUDE: "./run.sh" src bash :range-begin "### DB ###" :range-end "^#":lines "43-54"
    
 ** Flask
    
