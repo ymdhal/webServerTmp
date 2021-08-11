@@ -5,15 +5,18 @@
 scenario="web_server_template"
 flask_debug=1
 public_port=8020
+#dbg_cmd="/bin/sh"
 
 ### PATH ###
 run_dir="$(pwd)"
 app_dir="$run_dir/flask"
 db_dir="$run_dir/mariadb"
 wsgi_dir="$run_dir/uwsgi"
+web_dir="$run_dir/nginx"
 docker_dir="$run_dir/docker"
 jsonfile="$app_dir/conf/common.json"
 uwsgi_file=$wsgi_dir/uwsgi.ini
+nginx_file=$web_dir/default.conf
 
 ### SEVER ###
 server_root="/var/www"
@@ -51,6 +54,23 @@ echo "rc-service mariadb start" >> $setup_file
 echo "cat $server_tmp/init.sql | mysql" >> $setup_file
 
 #------------------------------------------------------------------------------------------------
+### WEB ###
+echo "rc-service nginx start" >> $setup_file
+echo " -> replace nginx(default.conf)"
+echo \
+"
+server {
+	listen $internal_port default_server;
+	listen [::]:$internal_port default_server;
+
+  location / {
+    include uwsgi_params;
+    uwsgi_pass unix:$server_root/uwsgi.sock;
+  }
+}
+" > $nginx_file
+
+#------------------------------------------------------------------------------------------------
 ### APP ###
 cat $app_dir/requirements.txt  >  $setup_dir/requirements.txt
 #echo "pip install -r $server_tmp/requirements.txt" >> $setup_file
@@ -69,17 +89,16 @@ echo \
 wsgi-file = $server_root/src/app.py
 pidfile = $server_root/%n.pid
 logto = $server_root/%n.log
-http = :$internal_port
-#socket = $server_root/%n.sock
+#http = :$internal_port
+socket = $server_root/%n.sock
 chmod-socket = 666
 callable = app
 master = true
-processes = 8
+processes = 2
 vacuum = true
 die-on-term = true
 py-autoreload = 1
 " > $uwsgi_file
-
 
 #------------------------------------------------------------------------------------------------
 ### JSON ###
@@ -96,11 +115,13 @@ cat $jsonfile | jq '.FW.PORT|='${internal_port}'' > tmp.json && mv tmp.json $jso
 #------------------------------------------------------------------------------------------------
 ### DOCKER ###
 #dockerfile="$docker_dir/flask.dockerfile"
-dockerfile="$docker_dir/uwsgi.dockerfile"
+#dockerfile="$docker_dir/uwsgi.dockerfile"
+dockerfile="./docker/nginx.dockerfile"
 
 tag_name=$scenario
 container_name="${scenario}_con"
 volume="\
+  -v $web_dir:/etc/nginx/http.d \
   -v $wsgi_dir:$server_root \
   -v $app_dir:$server_root/src \
   -v $db_dir/volume:$server_root/src/database \
