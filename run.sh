@@ -9,9 +9,9 @@ public_port=8020
 
 ### PATH ###
 run_dir="$(pwd)"
-app_dir="$run_dir/flask"
-db_dir="$run_dir/mariadb"
-wsgi_dir="$run_dir/uwsgi"
+app_dir="$run_dir/app1/flask"
+db_dir="$run_dir/app1/mariadb"
+wsgi_dir="$run_dir/app1/uwsgi"
 web_dir="$run_dir/nginx"
 docker_dir="$run_dir/docker"
 jsonfile="$app_dir/conf/common.json"
