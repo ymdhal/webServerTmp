@@ -4,6 +4,7 @@ FROM alpine:latest
 RUN echo "**** install Python ****" && \
     apk add --no-cache python3 \
       openrc \
+      tzdata \
       mariadb mariadb-common mariadb-dev mariadb-client \
       python3-dev gcc build-base linux-headers pcre-dev \
       nginx && \
