@@ -1,0 +1,56 @@
+{% extends "layout.html" %}
+
+<!-- HEADER -->
+{% block head %}
+<title>{{dict_com["COMMON"]["TITLE"]}}</title>
+{% endblock %}
+
+<!-- BODY -->
+{% block content %}
+<!-- TITLE-->
+<div id="title">
+    <h1> HELLO! WORLD!</h1>
+    <h2> {{dict_com["COMMON"]["SCENARIO"]}}</h2>
+</div>
+<!-- DIRCTORY TREE -->
+<div id="dir_tree">
+    <h2> DIRCTORY TREE</h2>
+    <script type=text/javascript>
+     insert_json_tree("dir_tree",{{ dir_trees|tojson }});
+    </script>
+</div>
+<!-- COMMON JSON-->
+<div id="com_json">
+    <h2> COMMON JSON</h2>
+    <script type=text/javascript>
+     insert_json_tree("com_json",{{ dict_com|tojson }});
+    </script>
+</div>
+
+<!-- MY_CONFIG JSON-->
+<div id="myconf_json">
+    <h2> MYCONF JSON</h2>
+    <script type=text/javascript>
+     insert_json_tree("myconf_json",{{ dict_conf|tojson }});
+    </script>
+</div>
+
+<!-- MY_SQL DATA -->
+<h2> MY_SQL_DATA </h2>
+<div class="mysql_data">
+    <table>
+        <tr>
+            {% for colum in colums %}
+            <th> {{ colum }} </th>
+            {% endfor %}
+        </tr>
+        {% for dict_elements in dict_db %}
+        <tr>
+            {% for key, value in dict_elements.items() %}
+            <td> {{ value }} </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

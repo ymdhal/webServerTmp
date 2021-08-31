@@ -1,0 +1,21 @@
+{
+  "COMMON": {
+    "TITLE": "DEMO_FLASK",
+    "DOMAIN": "project2",
+    "DEBUG": 1
+  },
+  "FW": {
+    "FW_NAME": "FLASK",
+    "HOST": "0.0.0.0",
+    "PORT": 8040
+  },
+  "WSGI": {
+    "WSGI_NAME": "uWSGI"
+  },
+  "SEVER": {
+    "SEVER_NAME": "nginx"
+  },
+  "DB": {
+    "DBMS_NAME": "MySQL"
+  }
+}

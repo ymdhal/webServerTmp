@@ -1,0 +1,10 @@
+###### Requirements without Version Specifiers ######`
+Flask
+flask-mysql
+passlib
+flask_wtf
+wtforms
+wtforms[email]
+email_validator
+email-validator
+###### Requirements with Version Specifiers ######`
