@@ -18,13 +18,13 @@ dict_flask = mi.get_flask_json()
 dir_trees = []
 mi.get_dir_tree("/var/www", dir_trees)
 
-bpname = "auth"
+bpname = dict_com["COMMON"]["DOMAIN"]
 bppath = "/" + bpname
 
 #------------------------------------------------
 
 # init blueprint
-bp = fl.Blueprint(bpname, __name__)
+bp = fl.Blueprint(bpname, __name__,url_prefix=bppath)
 
 # init database
 db = db.WrapDB("/*NOP*/", dict_com)

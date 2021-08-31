@@ -2,26 +2,42 @@
 
 #------------------------------------------------------------------------------------------------
 ### USR ###
-scenario="web_server_template"
-flask_debug=1
-public_port=8020
-#dbg_cmd="/bin/sh"
+public_port=80
 
+#------------------------------------------------------------------------------------------------
 ### PATH ###
-run_dir="$(pwd)"
-app_dir="$run_dir/app1/flask"
-db_dir="$run_dir/app1/mariadb"
-wsgi_dir="$run_dir/app1/uwsgi"
-web_dir="$run_dir/nginx"
+
+run_dir=`dirname $0`
+compose_file="$run_dir/docker-compose.json"
 docker_dir="$run_dir/docker"
-jsonfile="$app_dir/conf/common.json"
-uwsgi_file=$wsgi_dir/uwsgi.ini
+web_dir="$run_dir/nginx"
 nginx_file=$web_dir/default.conf
 
 ### SEVER ###
 server_root="/var/www"
-server_tmp="/tmp"
-internal_port=8030
+pj1_port=8030
+pj2_port=8040
+
+flask_debug=1
+pj1_domain="project1"
+pj2_domain="project2"
+#### project1 ####
+pj1_sv_root="$server_root/pj1"
+pj1_dir="$run_dir/app1"
+
+pj1_cnf_file="$pj1_dir/flask/conf/common.json"
+pj1_wsgi_file="$pj1_dir/uwsgi/uwsgi.ini"
+pj1_setup_file="$pj1_dir/setup/setup.sh"
+pj1_setup_cmd="/bin/sh $pj1_sv_root/setup/setup.sh"
+
+#### project2 ####
+pj2_sv_root="$server_root/pj2"
+pj2_dir="$run_dir/app2"
+
+pj2_cnf_file="$pj2_dir/flask/conf/common.json"
+pj2_wsgi_file="$pj2_dir/uwsgi/uwsgi.ini"
+pj2_setup_file="$pj2_dir/setup/setup.sh"
+pj2_setup_cmd="/bin/sh $pj2_sv_root/setup/setup.sh"
 
 #------------------------------------------------------------------------------------------------
 ### LOG ###
@@ -33,64 +49,78 @@ mkdir -p $LOG_DIR
 exec 1> >(tee -a $LOG_OUT)
 exec 2> >(tee -a $LOG_ERR)
 
-#------------------------------------------------------------------------------------------------
-### SETUP ###
-setup_dir="$LOG_DIR/setup"
-mkdir -p $setup_dir
-setup_file="$setup_dir/setup.sh"
-echo "### SETUP COMMAND ###" > $setup_file
-
-setup_cmd="/bin/sh $server_tmp/setup.sh"
-
-#------------------------------------------------------------------------------------------------
-### DB ###
-cp -f $db_dir/init.sql $setup_dir
-cp -f $db_dir/my.cnf $setup_dir
-echo "cp -f $server_tmp/my.cnf /etc/my.cnf" >> $setup_file
-echo "/etc/init.d/mariadb setup" >> $setup_file
-
-echo "rc-status" >> $setup_file
-echo "rc-service mariadb start" >> $setup_file
-echo "cat $server_tmp/init.sql | mysql" >> $setup_file
 
 #------------------------------------------------------------------------------------------------
 ### WEB ###
-echo "rc-service nginx start" >> $setup_file
 echo " -> replace nginx(default.conf)"
 echo \
 "
+upstream uwsgi_app1 {
+    server unix:/var/www/pj1/socket/uwsgi.sock;
+}
+upstream uwsgi_app2 {
+    server unix:/var/www/pj2/socket/uwsgi.sock;
+}
+
 server {
-	listen $internal_port default_server;
-	listen [::]:$internal_port default_server;
+	listen $public_port;
+
+  server_name $pj1_domain;
 
   location / {
     include uwsgi_params;
-    uwsgi_pass unix:$server_root/uwsgi.sock;
+    uwsgi_pass uwsgi_app1;
+  }
+}
+server {
+	listen $public_port ;
+
+  server_name $pj2_domain;
+
+  location / {
+    include uwsgi_params;
+    uwsgi_pass uwsgi_app2;
   }
 }
 " > $nginx_file
 
 #------------------------------------------------------------------------------------------------
-### APP ###
-cat $app_dir/requirements.txt  >  $setup_dir/requirements.txt
-#echo "pip install -r $server_tmp/requirements.txt" >> $setup_file
-#echo "python app.py" >> $setup_file
+### project1 ###
 
-#------------------------------------------------------------------------------------------------
+### SETUP ###
+echo "### SETUP COMMAND ###" > $pj1_setup_file
+
+### APP ###
+cat $pj1_dir/flask/requirements.txt  >  $pj1_dir/setup/requirements.txt
+
+cat $pj1_cnf_file | jq '.COMMON.DOMAIN|="'${pj1_domain}'"' > tmp.json && mv tmp.json $pj1_cnf_file
+
+cat $pj1_cnf_file | jq '.COMMON.DEBUG|='${flask_debug}'' > tmp.json && mv tmp.json $pj1_cnf_file
+
+cat $pj1_cnf_file | jq '.FW.PORT|='${pj1_port}'' > tmp.json && mv tmp.json $pj1_cnf_file
+
+### DB ###
+cp -f $pj1_dir/mariadb/init.sql $pj1_dir/setup
+cp -f $pj1_dir/mariadb/my.cnf $pj1_dir/setup
+echo "cp -f $pj1_sv_root/setup/my.cnf /etc/my.cnf" >> $pj1_setup_file
+echo "/etc/init.d/mariadb setup" >> $pj1_setup_file
+
+echo "rc-status" >> $pj1_setup_file
+echo "rc-service mariadb start" >> $pj1_setup_file
+echo "cat $pj1_sv_root/setup/init.sql | mysql" >> $pj1_setup_file
+
 ### WSGI ###
-cat $wsgi_dir/requirements.txt  >> $setup_dir/requirements.txt
-echo "pip install -r $server_tmp/requirements.txt" >> $setup_file
-#echo "uwsgi --json $server_root/uwsgi.json" >> $setup_file
-echo "uwsgi --ini $server_root/uwsgi.ini" >> $setup_file
+cat $pj1_dir/uwsgi/requirements.txt  >> $pj1_dir/setup/requirements.txt
+echo "pip install -r $pj1_sv_root/setup/requirements.txt" >> $pj1_setup_file
+echo "uwsgi --ini $pj1_sv_root/uwsgi.ini" >> $pj1_setup_file
 
 echo " -> replace uwsgi.ini"
 echo \
 "[uwsgi]
-wsgi-file = $server_root/src/app.py
-pidfile = $server_root/%n.pid
-logto = $server_root/%n.log
-#http = :$internal_port
-socket = $server_root/%n.sock
+wsgi-file = $pj1_sv_root/src/app.py
+pidfile = $pj1_sv_root/%n.pid
+logto = $pj1_sv_root/%n.log
+socket = $pj1_sv_root/socket/uwsgi.sock
 chmod-socket = 666
 callable = app
 master = true
@@ -98,65 +128,187 @@ processes = 2
 vacuum = true
 die-on-term = true
 py-autoreload = 1
-" > $uwsgi_file
+" > $pj1_wsgi_file
 
 #------------------------------------------------------------------------------------------------
-### JSON ###
-echo " -> replace scenario_name_of_json"
-cat $jsonfile | jq '.COMMON.SCENARIO|="'${scenario}'"' > tmp.json && mv tmp.json $jsonfile
+### project2 ###
 
-cat $jsonfile | jq '.COMMON.DEBUG|='${flask_debug}'' > tmp.json && mv tmp.json $jsonfile
+### SETUP ###
+echo "### SETUP COMMAND ###" > $pj2_setup_file
 
-cat $jsonfile | jq '.FW.PORT|='${internal_port}'' > tmp.json && mv tmp.json $jsonfile
+### APP ###
+cat $pj2_dir/flask/requirements.txt  >  $pj2_dir/setup/requirements.txt
 
-#tmp_jsonfile=$app_dir/conf/common.json
-#
-#cp -f $jsonfile $tmp_jsonfile
+cat $pj2_cnf_file | jq '.COMMON.DOMAIN|="'${pj2_domain}'"' > tmp.json && mv tmp.json $pj2_cnf_file
+
+cat $pj2_cnf_file | jq '.COMMON.DEBUG|='${flask_debug}'' > tmp.json && mv tmp.json $pj2_cnf_file
+
+cat $pj2_cnf_file | jq '.FW.PORT|='${pj2_port}'' > tmp.json && mv tmp.json $pj2_cnf_file
+
+### DB ###
+cp -f $pj2_dir/mariadb/init.sql $pj2_dir/setup
+cp -f $pj2_dir/mariadb/my.cnf $pj2_dir/setup
+echo "cp -f $pj2_sv_root/setup/my.cnf /etc/my.cnf" >> $pj2_setup_file
+echo "/etc/init.d/mariadb setup" >> $pj2_setup_file
+
+echo "rc-status" >> $pj2_setup_file
+echo "rc-service mariadb start" >> $pj2_setup_file
+echo "cat $pj2_sv_root/setup/init.sql | mysql" >> $pj2_setup_file
+
+### WSGI ###
+cat $pj2_dir/uwsgi/requirements.txt  >> $pj2_dir/setup/requirements.txt
+echo "pip install -r $pj2_sv_root/setup/requirements.txt" >> $pj2_setup_file
+echo "uwsgi --ini $pj2_sv_root/uwsgi.ini" >> $pj2_setup_file
+
+echo " -> replace uwsgi.ini"
+echo \
+"[uwsgi]
+wsgi-file = $pj2_sv_root/src/app.py
+pidfile = $pj2_sv_root/%n.pid
+logto = $pj2_sv_root/%n.log
+socket = $pj2_sv_root/socket/uwsgi.sock
+chmod-socket = 666
+callable = app
+master = true
+processes = 2
+vacuum = true
+die-on-term = true
+py-autoreload = 1
+" > $pj2_wsgi_file
+
+
+
 #------------------------------------------------------------------------------------------------
 ### DOCKER ###
-#dockerfile="$docker_dir/flask.dockerfile"
-#dockerfile="$docker_dir/uwsgi.dockerfile"
-dockerfile="./docker/nginx.dockerfile"
+dockerfile="nginx.dockerfile"
 
-tag_name=$scenario
-container_name="${scenario}_con"
-volume="\
-  -v $web_dir:/etc/nginx/http.d \
-  -v $wsgi_dir:$server_root \
-  -v $app_dir:$server_root/src \
-  -v $db_dir/volume:$server_root/src/database \
-  -v $setup_dir:$server_tmp \
-"
+# pj1
+cat $compose_file | jq \
+                        '.services.project1.container_name|="'${pj1_domain}'"' \
+                        > tmp.json && mv tmp.json $compose_file
+
+cat $compose_file | jq \
+                        '.services.project1.build.context|="'${docker_dir}'"' \
+                        > tmp.json && mv tmp.json $compose_file
+
+
+cat $compose_file | jq \
+                        '.services.project1.build.dockerfile|="'${dockerfile}'"' \
+                        > tmp.json && mv tmp.json $compose_file
+
+cat $compose_file | jq \
+                        ".services.project1.command|=\"${pj1_setup_cmd}\"" \
+                        > tmp.json && mv tmp.json $compose_file
+
+cat $compose_file | jq \
+                        '.services.project1.volumes|=[
+"'${pj1_dir}'/uwsgi:'${pj1_sv_root}'",
+"'${pj1_dir}'/socket:'${pj1_sv_root}'/socket",
+"'${pj1_dir}'/setup:'${pj1_sv_root}'/setup",
+"'${pj1_dir}'/flask:'${pj1_sv_root}'/src",
+"'${pj1_dir}'/mariadb/volume:'${pj1_sv_root}'/src/database"
+] ' \
+                        > tmp.json && mv tmp.json $compose_file
+
+cat $compose_file | jq \
+                        '.services.project1.ports|=[
+"'${pj1_port}':'${pj1_port}'"
+] ' \
+                        > tmp.json && mv tmp.json $compose_file
+
+
+# pj2
+
+ cat $compose_file | jq \
+                         '.services.project2.container_name|="'${pj2_domain}'"' \
+                         > tmp.json && mv tmp.json $compose_file
+
+ cat $compose_file | jq \
+                         '.services.project2.build.context|="'${docker_dir}'"' \
+                         > tmp.json && mv tmp.json $compose_file
+
+
+ cat $compose_file | jq \
+                         '.services.project2.build.dockerfile|="'${dockerfile}'"' \
+                         > tmp.json && mv tmp.json $compose_file
+
+ cat $compose_file | jq \
+                         ".services.project2.command|=\"${pj2_setup_cmd}\"" \
+                         > tmp.json && mv tmp.json $compose_file
+
+ cat $compose_file | jq \
+                         '.services.project2.volumes|=[
+ "'${pj2_dir}'/uwsgi:'${pj2_sv_root}'",
+ "'${pj2_dir}'/socket:'${pj2_sv_root}'/socket",
+ "'${pj2_dir}'/setup:'${pj2_sv_root}'/setup",
+ "'${pj2_dir}'/flask:'${pj2_sv_root}'/src",
+ "'${pj2_dir}'/mariadb/volume:'${pj2_sv_root}'/src/database"
+ ] ' \
+                         > tmp.json && mv tmp.json $compose_file
+
+ cat $compose_file | jq \
+                         '.services.project2.ports|=[
+ "'${pj2_port}':'${pj2_port}'"
+ ] ' \
+                         > tmp.json && mv tmp.json $compose_file
+
+#nginx
+cat $compose_file | jq \
+                        '.services.nginx.volumes|=[
+"'${web_dir}'/default.conf:/etc/nginx/conf.d/default.conf",
+"'${pj1_dir}'/socket:'${pj1_sv_root}'/socket",
+"'${pj2_dir}'/socket:'${pj2_sv_root}'/socket"
+] ' \
+                        > tmp.json && mv tmp.json $compose_file
+
+cat $compose_file | jq \
+                        '.services.nginx.ports|=[
+"'${public_port}':'${public_port}'"
+] ' \
+                        > tmp.json && mv tmp.json $compose_file
+
+#tag_name=$scenario
+#container_name="${scenario}_con"
+#volume="\
+#  -v $web_dir:/etc/nginx/http.d \
+#  -v $pj1_wsgi_dir:$server_root \
+#  -v $pj1_app_dir:$server_root/src \
+#  -v $pj1_db_dir/volume:$server_root/src/database \
+#  -v $setup_dir:$pj1_setup_dir \
+#"
 
 ### MAKE ###
-echo "** Start to make Docker_Image"
+#echo "** Start to make Docker_Image"
+#
+#if docker images | grep -q "$tag_name "; then \
+#    echo " -> docker_image already exists"
+#else \
+#    docker build -f $dockerfile -t $tag_name .
+#    echo " -> Finished making Docker_Image"
+#fi
+#
+#### RUN ###
+#echo "** Start to run Docker"
+#
+#if docker ps -a | grep -q $container_name; then \
+#    echo " -> docker_container already exists"
+#    echo " -> stop docker"
+#    docker stop $container_name
+#    echo " -> remove  docker"
+#    docker rm $container_name
+#    echo "** Restart to run Docker"
+#fi
 
-if docker images | grep -q "$tag_name "; then \
-    echo " -> docker_image already exists"
-else \
-    docker build -f $dockerfile -t $tag_name .
-    echo " -> Finished making Docker_Image"
-fi
-
-### RUN ###
-echo "** Start to run Docker"
-
-if docker ps -a | grep -q $container_name; then \
-    echo " -> docker_container already exists"
-    echo " -> stop docker"
-    docker stop $container_name
-    echo " -> remove  docker"
-    docker rm $container_name
-    echo "** Restart to run Docker"
-fi
-
-docker run -ti --name $container_name \
-       -e TZ=Asia/Tokyo  \
-       -e PYTHONDONTWRITEBYTECODE=1 \
-       -p $public_port:$internal_port \
-       -w $server_root \
-       $volume \
-       $tag_name \
-       $setup_cmd
+docker-compose -f ./docker-compose.json up -d
+# docker-compose build
+# docker-compose up -d
+#docker run -ti --name $container_name \
+#       -e TZ=Asia/Tokyo  \
+#       -e PYTHONDONTWRITEBYTECODE=1 \
+#       -p $public_port:$internal_port \
+#       -w $server_root \
+#       $volume \
+#       $tag_name \
+#       $pj1_setup_cmd
 
 #------------------------------------------------------------------------------------------------
