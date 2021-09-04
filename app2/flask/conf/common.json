@@ -2,12 +2,12 @@
   "COMMON": {
     "TITLE": "DEMO_FLASK",
     "DOMAIN": "project2",
-    "DEBUG": 1
+    "DEBUG": 0
   },
   "FW": {
     "FW_NAME": "FLASK",
     "HOST": "0.0.0.0",
-    "PORT": 8040
+    "PORT": 80
   },
   "WSGI": {
     "WSGI_NAME": "uWSGI"

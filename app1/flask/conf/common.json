@@ -1,13 +1,13 @@
 {
   "COMMON": {
     "TITLE": "DEMO_FLASK",
-    "SCENARIO": "web_server_template",
-    "DEBUG": 1
+    "DOMAIN": "project1",
+    "DEBUG": 0
   },
   "FW": {
     "FW_NAME": "FLASK",
     "HOST": "0.0.0.0",
-    "PORT": 8010
+    "PORT": 80
   },
   "WSGI": {
     "WSGI_NAME": "uWSGI"

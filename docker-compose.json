@@ -8,16 +8,17 @@
       },
       "command": "/bin/sh /var/www/pj1/setup/setup.sh",
       "volumes": [
+        "/sys/fs/cgroup",
         "./app1/uwsgi:/var/www/pj1",
         "./app1/socket:/var/www/pj1/socket",
         "./app1/setup:/var/www/pj1/setup",
         "./app1/flask:/var/www/pj1/src",
         "./app1/mariadb/volume:/var/www/pj1/src/database"
       ],
-      "ports": [
-        "8030:8030"
-      ],
-      "container_name": "project1"
+      "container_name": "project1",
+      "environment": [
+        "TZ:Asia/Tokyo"
+      ]
     },
     "nginx": {
       "image": "nginx",
@@ -31,7 +32,11 @@
         "80:80"
       ],
       "links": [
-        "project1"
+        "project1",
+        "project2"
+      ],
+      "environment": [
+        "TZ:Asia/Tokyo"
       ]
     },
     "project2": {
@@ -42,14 +47,15 @@
       },
       "command": "/bin/sh /var/www/pj2/setup/setup.sh",
       "volumes": [
+        "/sys/fs/cgroup",
         "./app2/uwsgi:/var/www/pj2",
         "./app2/socket:/var/www/pj2/socket",
         "./app2/setup:/var/www/pj2/setup",
         "./app2/flask:/var/www/pj2/src",
         "./app2/mariadb/volume:/var/www/pj2/src/database"
       ],
-      "ports": [
-        "8040:8040"
+      "environment": [
+        "TZ:Asia/Tokyo"
       ]
     }
   }
