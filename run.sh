@@ -3,7 +3,7 @@
 #------------------------------------------------------------------------------------------------
 ### USR ###
 public_port=80
-
+timezone="Asia/Tokyo"
 #------------------------------------------------------------------------------------------------
 ### PATH ###
 
@@ -16,21 +16,23 @@ nginx_file=$web_dir/default.conf
 ### SEVER ###
 server_root="/var/www"
 
-flask_debug=0
-pj1_subdomain="project1"
-pj2_subdomain="project2"
 #### project1 ####
-pj1_sv_root="$server_root/pj1"
+flask_debug=0
+db_port=3306
+pj1_name="project1"
+pj1_db_name="db"
+pj1_sv_root="$server_root/$pj1_name"
 pj1_dir="$run_dir/app1"
 
 pj1_cnf_file="$pj1_dir/flask/conf/common.json"
 pj1_wsgi_file="$pj1_dir/uwsgi/uwsgi.ini"
-pj1_uwsgi_file="$pj1_dir/uwsgi/uwsgi.json"
+pj1_db_file="$pj1_dir/mariadb/my.cnf"
 pj1_setup_file="$pj1_dir/setup/setup.sh"
 pj1_setup_cmd="/bin/sh $pj1_sv_root/setup/setup.sh"
 
 #### project2 ####
-pj2_sv_root="$server_root/pj2"
+pj2_name="project2"
+pj2_sv_root="$server_root/$pj2_name"
 pj2_dir="$run_dir/app2"
 
 pj2_cnf_file="$pj2_dir/flask/conf/common.json"
@@ -84,7 +86,7 @@ server {
 
 server {
   listen $public_port;
-  server_name $pj1_subdomain;
+  server_name $pj1_name;
   location / {
     include uwsgi_params;
     uwsgi_pass uwsgi_app1;
@@ -92,7 +94,7 @@ server {
 }
 server {
   listen $public_port ;
-  server_name $pj2_subdomain;
+  server_name $pj2_name;
   location / {
     include uwsgi_params;
     uwsgi_pass uwsgi_app2;
@@ -109,9 +111,11 @@ echo "### SETUP COMMAND ###" > $pj1_setup_file
 ### APP ###
 cat $pj1_dir/flask/requirements.txt  >  $pj1_dir/setup/requirements.txt
 
-repJson $pj1_cnf_file ".COMMON.DOMAIN"  "\"$pj1_subdomain\""
+repJson $pj1_cnf_file ".COMMON.DOMAIN"  "\"$pj1_name\""
 repJson $pj1_cnf_file ".COMMON.DEBUG"   "$flask_debug"
 repJson $pj1_cnf_file ".FW.PORT"        "$public_port"
+repJson $pj1_cnf_file ".DB.PORT"        "$db_port"
+repJson $pj1_cnf_file ".DB.HOST"        "\"$pj1_db_name\""
 
 ### WSGI ###
 cat $pj1_dir/uwsgi/requirements.txt  >> $pj1_dir/setup/requirements.txt
@@ -134,6 +138,20 @@ die-on-term = true
 py-autoreload = 1
 " > $pj1_wsgi_file
 
+
+### DB ###
+echo \
+"[client]
+default-character-set=utf8
+port=$db_port
+[mysqld]
+port=$db_port
+character-set-server	= utf8
+collation-server	= utf8_general_ci
+[mysql]
+default-character-set=utf8
+" > $pj1_db_file
+
 #------------------------------------------------------------------------------------------------
 ### project2 ###
 
@@ -143,7 +161,7 @@ echo "### SETUP COMMAND ###" > $pj2_setup_file
 ### APP ###
 cat $pj2_dir/flask/requirements.txt  >  $pj2_dir/setup/requirements.txt
 
-repJson $pj2_cnf_file ".COMMON.DOMAIN"  "\"$pj2_subdomain\""
+repJson $pj2_cnf_file ".COMMON.DOMAIN"  "\"$pj2_name\""
 repJson $pj2_cnf_file ".COMMON.DEBUG"   "$flask_debug"
 repJson $pj2_cnf_file ".FW.PORT"        "$public_port"
 
@@ -181,14 +199,26 @@ v2="${pj1_dir}/uwsgi:${pj1_sv_root}"
 v3="${pj1_dir}/socket:${pj1_sv_root}/socket"
 v4="${pj1_dir}/setup:${pj1_sv_root}/setup"
 v5="${pj1_dir}/flask:${pj1_sv_root}/src"
-v6="${pj1_dir}/mariadb/volume:${pj1_sv_root}/src/database"
 
-repComJson ".services.project1.volumes"     '["'$v1'","'$v2'","'$v3'","'$v4'","'$v5'","'$v6'"]'
-repComJson ".services.project1.environment" '["TZ:Asia/Tokyo"]'
-repComJson ".services.project1.command"          "\"$pj1_setup_cmd\""
-repComJson ".services.project1.container_name"   "\"$pj1_subdomain\""
-repComJson ".services.project1.build.context"    "\"$docker_dir\""
-repComJson ".services.project1.build.dockerfile" "\"$dockerfile\""
+repComJson ".services.$pj1_name.volumes"     '["'$v1'","'$v2'","'$v3'","'$v4'","'$v5'"]'
+repComJson ".services.$pj1_name.environment" '["TZ='$timezone'"]'
+repComJson ".services.$pj1_name.command"          "\"$pj1_setup_cmd\""
+repComJson ".services.$pj1_name.container_name"   "\"$pj1_name\""
+repComJson ".services.$pj1_name.build.context"    "\"$docker_dir\""
+repComJson ".services.$pj1_name.build.dockerfile" "\"$dockerfile\""
+repComJson ".services.$pj1_name.depends_on"  '["db"]'
+
+# db
+v1="$pj1_dir/mariadb/volume:$pj1_sv_root/src/database"
+v2="$pj1_dir/mariadb/my.cnf:/etc/mysql/conf.d/my.conf"
+v3="$pj1_dir/mariadb/init.sql:/docker-entrypoint-initdb.d/init.sql"
+e1="MYSQL_ROOT_PASSWORD=guitar"
+e2="TZ=$timezone"
+repComJson ".services.$pj1_db_name.container_name"  '"mariadb"'
+repComJson ".services.$pj1_db_name.image"           '"mariadb:latest"'
+repComJson ".services.$pj1_db_name.ports"           '["'$db_port':'$db_port'"]'
+repComJson ".services.$pj1_db_name.volumes"         '["'$v1'","'$v2'","'$v3'"]'
+repComJson ".services.$pj1_db_name.environment"     '["'$e1'","'$e2'"]'
 
 # pj2
 v1="/sys/fs/cgroup"
@@ -198,12 +228,12 @@ v4="${pj2_dir}/setup:${pj2_sv_root}/setup"
 v5="${pj2_dir}/flask:${pj2_sv_root}/src"
 v6="${pj2_dir}/mariadb/volume:${pj2_sv_root}/src/database"
 
-repComJson ".services.project2.volumes"     '["'$v1'","'$v2'","'$v3'","'$v4'","'$v5'","'$v6'"]'
-repComJson ".services.project2.environment" '["TZ:Asia/Tokyo"]'
-repComJson ".services.project2.command"          "\"$pj2_setup_cmd\""
-repComJson ".services.project2.container_name"   "\"$pj2_subdomain\""
-repComJson ".services.project2.build.context"    "\"$docker_dir\""
-repComJson ".services.project2.build.dockerfile" "\"$dockerfile\""
+repComJson ".services.$pj2_name.volumes"     '["'$v1'","'$v2'","'$v3'","'$v4'","'$v5'","'$v6'"]'
+repComJson ".services.$pj2_name.environment" '["TZ='$timezone'"]'
+repComJson ".services.$pj2_name.command"          "\"$pj2_setup_cmd\""
+repComJson ".services.$pj2_name.container_name"   "\"$pj2_name\""
+repComJson ".services.$pj2_name.build.context"    "\"$docker_dir\""
+repComJson ".services.$pj2_name.build.dockerfile" "\"$dockerfile\""
 
 #nginx
 v1="${web_dir}/default.conf:/etc/nginx/conf.d/default.conf"
@@ -214,8 +244,8 @@ repComJson ".services.nginx.image"           '"nginx"'
 repComJson ".services.nginx.container_name"  '"nginx"'
 repComJson ".services.nginx.volumes"         '["'$v1'","'$v2'","'$v3'"]'
 repComJson ".services.nginx.ports"           '["'$public_port':'$public_port'"]'
-repComJson ".services.nginx.links"           '["'$pj1_subdomain'","'$pj2_subdomain'"]'
-repComJson ".services.nginx.environment"     '["TZ:Asia/Tokyo"]'
+repComJson ".services.nginx.links"           '["'$pj1_name'","'$pj2_name'"]'
+repComJson ".services.nginx.environment"     '["TZ='$timezone'"]'
 
 docker-compose -f ./docker-compose.json up
 #------------------------------------------------------------------------------------------------

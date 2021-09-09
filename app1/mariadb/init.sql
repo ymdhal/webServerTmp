@@ -1,8 +1,8 @@
 /**/
-CREATE USER vymd@localhost;
-SET PASSWORD FOR vymd@localhost=password('guitar');
+CREATE USER 'vymd'@'%' IDENTIFIED BY 'guitar';
+/*SET PASSWORD FOR vymd@'%'=password('guitar');*/
 CREATE DATABASE hoge;
-GRANT ALL ON hoge.* TO vymd@localhost;
+GRANT ALL ON hoge.* TO 'vymd'@'%';
 USE hoge;
 
 /*USRS*/

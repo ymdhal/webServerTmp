@@ -5,7 +5,7 @@ import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
 import modules.misc as mi
-#import controllers.auth as auth #auth.py
+import controllers.auth as auth #auth.py
 
 # common json
 dict_com = mi.get_com_json()
@@ -14,7 +14,7 @@ dict_com = mi.get_com_json()
 app = fl.Flask(__name__)
 
 # register blueprint
-#app.register_blueprint(auth.bp)
+app.register_blueprint(auth.bp)
 
 @app.route('/')
 def index():

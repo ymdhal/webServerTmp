@@ -15,9 +15,10 @@ class WrapDB:
             #app.config["MYSQL_DATABASE_PASSWORD"] = "guitar"
             #app.config["MYSQL_DATABASE_DB"] = "hoge"
             #app.config["MYSQL_DATABASE_PORT"] = 3306
-            self.db = pm.connect(host='localhost',
+            self.db = pm.connect(host=dict_conf["DB"]["HOST"],
                                  user='vymd',
                                  db='hoge',
+                                 port=dict_conf["DB"]["PORT"],
                                  charset='utf8',
                                  passwd='guitar',
                                  cursorclass=pm.cursors.DictCursor)

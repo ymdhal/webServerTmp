@@ -16,6 +16,8 @@
     "SEVER_NAME": "nginx"
   },
   "DB": {
-    "DBMS_NAME": "MySQL"
+    "DBMS_NAME": "MySQL",
+    "PORT": 3306,
+    "HOST": "db"
   }
 }
