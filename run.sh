@@ -209,16 +209,21 @@ repComJson ".services.$pj1_name.build.dockerfile" "\"$dockerfile\""
 repComJson ".services.$pj1_name.depends_on"  '["db"]'
 
 # db
-v1="$pj1_dir/mariadb/volume:$pj1_sv_root/src/database"
+v1="$pj1_dir/mariadb/volume:/var/lib/mysql"
+#v1="$pj1_dir/mariadb/volume:$pj1_sv_root/src/database"
 v2="$pj1_dir/mariadb/my.cnf:/etc/mysql/conf.d/my.conf"
-v3="$pj1_dir/mariadb/init.sql:/docker-entrypoint-initdb.d/init.sql"
+#v3="$pj1_dir/mariadb/bak_hoge.sql:/docker-entrypoint-initdb.d/init.sql"
 e1="MYSQL_ROOT_PASSWORD=guitar"
-e2="TZ=$timezone"
+#e3="MYSQL_PASSWORD=guitar"
+e2="MYSQL_DATABASE=hoge"
+e3="TZ=$timezone"
 repComJson ".services.$pj1_db_name.container_name"  '"mariadb"'
 repComJson ".services.$pj1_db_name.image"           '"mariadb:latest"'
 repComJson ".services.$pj1_db_name.ports"           '["'$db_port':'$db_port'"]'
-repComJson ".services.$pj1_db_name.volumes"         '["'$v1'","'$v2'","'$v3'"]'
-repComJson ".services.$pj1_db_name.environment"     '["'$e1'","'$e2'"]'
+repComJson ".services.$pj1_db_name.volumes"         '["'$v1'","'$v2'"]'
+#repComJson ".services.$pj1_db_name.volumes"         '["'$v1'","'$v2'","'$v3'"]'
+repComJson ".services.$pj1_db_name.environment"     '["'$e1'","'$e2'","'$e3'"]'
+#repComJson ".services.$pj1_db_name.environment"     '["'$e1'","'$e2'","'$e3'","'$e4'","'$e5'"]'
 
 # pj2
 v1="/sys/fs/cgroup"

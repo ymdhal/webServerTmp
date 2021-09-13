@@ -12,6 +12,8 @@ dict_com = mi.get_com_json()
 
 # init flask
 app = fl.Flask(__name__)
+key = "1234"
+app.secret_key = key 
 
 # register blueprint
 app.register_blueprint(auth.bp)
@@ -25,10 +27,8 @@ def index():
 #------------------------------------------------
 if __name__ == '__main__':
     #key = os.urandom(24)
-    key = "1234"
     #print(key)
     #print(int.from_bytes(key,"little"))
-    app.secret_key = key 
     app.run(host=dict_com["FW"]["HOST"],
             port=dict_com["FW"]["PORT"],
             debug=dict_com["COMMON"]["DEBUG"])

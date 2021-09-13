@@ -18,8 +18,9 @@ dict_flask = mi.get_flask_json()
 dir_trees = []
 mi.get_dir_tree("/var/www", dir_trees)
 
-bpname = dict_com["COMMON"]["DOMAIN"]
-bppath = "/" + bpname
+bpname = "auth"
+#bpname = dict_com["COMMON"]["DOMAIN"]
+bppath = "/" + bpname 
 
 #------------------------------------------------
 
@@ -58,15 +59,16 @@ def login():
                 err_msg = "Account not Found"
                 fl.flash(err_msg, "failed")
             else:
-                # 登録日とSECRET_KEYをソルトに
-                db_reg_date = data["register_date"]
-                salt = str(db_reg_date) + fl.current_app.config["SECRET_KEY"]
+                # ユーザ名とSECRET_KEYをソルトに
+                db_reg_usrname = data["usrname"]
+                print(db_reg_usrname) 
+                salt = str(db_reg_usrname) + fl.current_app.config["SECRET_KEY"]
                 # ハッシュ化
                 hash_pass = mi.generate_hash(password_candidate, salt)
                 # DB内パスワードと入力パスワードを比較
                 db_password = data["password"]
                 print(hash_pass)
-                hash_pass = "guitar"
+                #hash_pass = "guitar"
                 print(db_password)
                 if (db_password == hash_pass):
                     #  ログイン成功
@@ -120,9 +122,15 @@ def register():
             data = db.get_data("usrs", "email", email_candidate)
             if data is None:
                 # 本登録フォームアドレス送信
-                ml.send_regsave_url(email_candidate)
-                msg = "Send RegisterPage to your email_address"
-                fl.flash(msg, "success")
+                #ml.send_regsave_url(email_candidate)
+                # 本登録画面で本来登録だが、暫定ですぐ登録処理
+                result = db.reg_usr(username_candidate,email_candidate,password_candidate)
+                if result == "ok" :
+                    msg = "Send RegisterPage to your email_address"
+                    fl.flash(msg, "success")
+                else:
+                    err_msg = result
+                    fl.flash(err_msg, "failed")
             else:  # data exists
                 err_msg = "Account already exist"
                 fl.flash(err_msg, "failed")
@@ -139,6 +147,10 @@ def register():
 
 @bp.route('/')
 def index():
+    colums = db.get_colums("usrs")
+    dict_db = db.fetch_all("usrs")
+    for ele_dict_db in dict_db:
+        ele_dict_db["password"] = ele_dict_db["password"][:8]
     return fl.render_template('/index.html',
                               dict_com=dict_com,
                               dict_conf=dict_flask,

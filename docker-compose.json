@@ -29,9 +29,8 @@
         "3306:3306"
       ],
       "volumes": [
-        "./app1/mariadb/volume:/var/www/project1/src/database",
-        "./app1/mariadb/my.cnf:/etc/mysql/conf.d/my.conf",
-        "./app1/mariadb/init.sql:/docker-entrypoint-initdb.d/init.sql"
+        "./app1/mariadb/volume:/var/lib/mysql",
+        "./app1/mariadb/my.cnf:/etc/mysql/conf.d/my.conf"
       ],
       "environment": [
         "MYSQL_ROOT_PASSWORD=guitar",

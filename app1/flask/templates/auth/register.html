@@ -13,6 +13,15 @@
 
 <div>
     <!-- FLASH -->
+    {% with messages = get_flashed_messages(category_filter=["success"]) %}
+    {% if messages %}
+    <ul>
+        {% for msg in messages %}
+        <li class="success">{{ msg }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
     {% with errors = get_flashed_messages(category_filter=["failed"]) %}
     {% if errors %}
     <ul>
