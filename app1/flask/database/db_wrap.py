@@ -22,7 +22,7 @@ class WrapDB:
             #app.config["MYSQL_DATABASE_PORT"] = 3306
             self.db = pm.connect(host=dict_conf["DB"]["HOST"],
                                  user='root',
-                                 db='hoge',
+                                 db='users',
                                  port=dict_conf["DB"]["PORT"],
                                  charset='utf8',
                                  passwd='guitar',
@@ -74,6 +74,7 @@ class WrapDB:
             #               email,
             #               password
             #               )
+            self.db.commit()
         except Exception as e:
             result = e
         finally:
