@@ -1,3 +1,59 @@
+{% extends "layout.html" %}
+
+<!-- HEADER -->
+{% block head %}
+<title>LOGOUT</title>
+{% endblock %}
+
+<!-- BODY -->
+{% block content %}
 <h1>
-    I'M LOGOUT
+    LOGOUT
 </h1>
+
+<div>
+    <!-- FLASH -->
+    {% with errors = get_flashed_messages(category_filter=["failed"]) %}
+    {% if errors %}
+    <ul>
+        {% for msg in errors %}
+        <li class="failed">{{ msg }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+
+
+    <div class="button">
+        <p>
+            <a href="./" class="btn btn-primary">ホーム</a>
+        </p>
+    </div>
+    <div class="button">
+        <p>
+            <a href="./register" class="btn btn-primary">登録</a>
+        </p>
+    </div>
+    <div class="button">
+        <p>
+            <a href="./login" class="btn btn-primary">ログイン</a>
+        </p>
+    </div>
+    <div class="button">
+        <p>
+            <a href="./update" class="btn btn-primary">更新</a>
+        </p>
+    </div>
+    <div class="button">
+        <p>
+            <a href="./delete" class="btn btn-primary">削除</a>
+        </p>
+    </div>
+    <div class="button">
+        <p>
+            <a href="./logout" class="btn btn-primary">ログアウト</a>
+        </p>
+    </div>
+
+</div>
+{% endblock %}

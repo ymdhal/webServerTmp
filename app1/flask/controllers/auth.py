@@ -9,6 +9,7 @@ import modules.mail as ml
 import modules.form as fm
 
 import passlib.hash as pl
+import functools as ftl
 #------------------------------------------------
 
 dict_com = mi.get_com_json()
@@ -36,6 +37,18 @@ dict_db = db.fetch_all("usrs")
 
 
 # ルーティング処理
+# check login
+def is_logged_in(f):
+  @ftl.wraps(f)
+  def wrap(*args, **kwargs):
+    if "logged_in" in fl.session :
+      return f(*args,**kwargs)
+    else:
+      fl.flash("Unauthorized , Please login ","failed")
+      return fl.redirect(fl.url_for("auth.login"))
+  return(wrap)
+
+
 #------------------------------------------------
 # ログイン
 #------------------------------------------------
@@ -61,7 +74,7 @@ def login():
             else:
                 # ユーザ名とSECRET_KEYをソルトに
                 db_reg_usrname = data["usrname"]
-                print(db_reg_usrname) 
+                print(db_reg_usrname)
                 salt = str(db_reg_usrname) + fl.current_app.config["SECRET_KEY"]
                 # ハッシュ化
                 hash_pass = mi.generate_hash(password_candidate, salt)
@@ -72,6 +85,7 @@ def login():
                 print(db_password)
                 if (db_password == hash_pass):
                     #  ログイン成功
+                    fl.session["logged_in"] = email_candidate
                     resp = fl.make_response(fl.redirect(fl.url_for("auth.index")))
                     #resp = fl.make_response(fl.render_template("/index.html"))
                     resp.set_cookie("session_id", "test",secure=True,httponly=True)
@@ -96,8 +110,8 @@ def login():
 
 @bp.route("/logout")
 def logout():
+    fl.session.clear()
     return fl.render_template(bppath + "/logout.html")
-
 
 #------------------------------------------------
 # 登録
@@ -144,8 +158,104 @@ def register():
 
     return fl.render_template(bppath + "/register.html")
 
+#------------------------------------------------
+# 更新
+#------------------------------------------------
+@bp.route("/update", methods=["GET", "POST"])
+@is_logged_in
+def update():
+    """
+    フォームからデータ取得
+    フロント側validate: form.py[regForm]
+    DB側validate: email有無のみ
+    """
+    # POST
+    if fl.request.method == "POST":
+        # フォームから入力データ取得
+        # validation check
+        form = fm.regForm(fl.request.form )
+        if form.validate():
+            username_candidate = form.username.data
+            email_candidate    = form.email.data
+            password_candidate = form.password.data
+            # emailでdb内検索
+            data = db.get_data("usrs", "email", email_candidate)
+            if data is None:
+                err_msg = "USER NOT FOUND"
+                fl.flash(err_msg, "failed")
+            else:  # data exists
+                msg = "Update User Info"
+                salt = str(username_candidate) + fl.current_app.config["SECRET_KEY"]
+                # ハッシュ化
+                hash_pass = mi.generate_hash(password_candidate, salt)
+                db.put_data("usrs", "email", email_candidate,data["id"])
+                db.put_data("usrs", "usrname", username_candidate,data["id"])
+                db.put_data("usrs", "password", hash_pass,data["id"])
+                fl.flash(msg, "success")
+        else:  #validation error
+            for field_errors in form.errors.values():
+                for error in field_errors:
+                    fl.flash(error, "failed")
+
+    else:  # GET
+        pass
+
+    return fl.render_template(bppath + "/update.html")
+
+
+#------------------------------------------------
+# 削除
+#------------------------------------------------
+@bp.route("/delete", methods=["GET", "POST"])
+@is_logged_in
+def delete():
+    """
+    フォームからデータ取得
+    フロント側validate: form.py[regForm]
+    DB側validate: email有無のみ
+    """
+    # POST
+    if fl.request.method == "POST":
+        # フォームから入力データ取得
+        # validation check
+        form = fm.passForm(fl.request.form)
+        if form.validate():
+            email_candidate    = fl.session["logged_in"]
+            password_candidate = form.password.data
+            # emailでdb内検索
+            data = db.get_data("usrs", "email", email_candidate)
+            print(email_candidate)
+            if data is None:
+                err_msg = "USER NOT FOUND"
+                fl.flash(err_msg, "failed")
+            else:  # data exists
+                username_candidate = data["usrname"]
+                print(data)
+                msg = "Delete User Info"
+                salt = str(username_candidate) + fl.current_app.config["SECRET_KEY"]
+                # ハッシュ化
+                hash_pass = mi.generate_hash(password_candidate, salt)
+                if hash_pass == data["password"]:
+                    db.del_usr("usrs", "email", email_candidate)
+                    fl.flash(msg, "success")
+                    fl.session.clear()
+                    return fl.redirect(fl.url_for("auth.logout"))
+                else :
+                    err_msg = "password is incorrect"
+                    fl.flash(err_msg, "failed")
+        else:  #validation error
+            for field_errors in form.errors.values():
+                for error in field_errors:
+                    fl.flash(error, "failed")
+
+    else:  # GET
+        pass
+
+    return fl.render_template(bppath + "/delete.html")
+
 
 @bp.route('/')
+@is_logged_in
 def index():
     colums = db.get_colums("usrs")
     dict_db = db.fetch_all("usrs")

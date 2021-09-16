@@ -2,13 +2,13 @@
 
 <!-- HEADER -->
 {% block head %}
-<title>REGISTER</title>
+<title>DELETE</title>
 {% endblock %}
 
 <!-- BODY -->
 {% block content %}
 <h1>
-    REGISTER
+    DELETE
 </h1>
 
 <div>
@@ -34,20 +34,6 @@
     <!-- /FLASH -->
     <form action="" method="POST">
         <div class="form-group">
-            <!-- USERNAME -->
-            <div class="username">
-                <p>
-                    <label>ユーザ名</label>
-                    <input type="text" name="username" class="form-control" value={{request.form.username}} >
-                </p>
-            </div>
-            <!-- EMAIL -->
-            <div class="email">
-                <p>
-                <label>メールアドレス</label>
-                <input type="text" name="email" class="form-control" value={{request.form.email}} >
-                </p>
-            </div>
             <!-- PASSWORD-->
             <div class="password">
                 <p>
@@ -66,7 +52,7 @@
         <!-- SUBMIT-->
         <div class="button">
             <p>
-                <button type="submit" class="btn btn-primary">登録</button>
+                <button type="submit" class="btn btn-primary">削除</button>
             </p>
         </div>
     </form>

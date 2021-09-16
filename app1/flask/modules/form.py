@@ -1,5 +1,23 @@
 import wtforms as wf
 
+class passForm(wf.Form):
+    """
+    pass_form
+    """
+    password = wf.PasswordField("password")
+    confirm = wf.PasswordField("confirm",
+        [wf.validators.EqualTo("password",
+                               message="パスワードが一致していません")
+        ])
+    def validate_password(self, password):
+        """
+        パスワード バリデーション:
+        - 未入力は禁止
+        - 文字数が10文字以上は禁止
+        """
+        if password.data == "":
+            raise wf.ValidationError("パスワードを入力してください")
+
 
 class loginForm(wf.Form):
     """

@@ -2,13 +2,13 @@
 
 <!-- HEADER -->
 {% block head %}
-<title>REGISTER</title>
+<title>UPDATE</title>
 {% endblock %}
 
 <!-- BODY -->
 {% block content %}
 <h1>
-    REGISTER
+    UPDATE
 </h1>
 
 <div>
@@ -37,7 +37,7 @@
             <!-- USERNAME -->
             <div class="username">
                 <p>
-                    <label>ユーザ名</label>
+                    <label>新しいユーザ名</label>
                     <input type="text" name="username" class="form-control" value={{request.form.username}} >
                 </p>
             </div>
@@ -51,26 +51,25 @@
             <!-- PASSWORD-->
             <div class="password">
                 <p>
-                    <label>パスワード</label>
+                    <label>新しいパスワード</label>
                     <input type="password" name="password" class="form-control" value={{request.form.password}} >
                 </p>
             </div>
             <!-- REPASSWORD-->
             <div class="repassword">
                 <p>
-                <label>パスワード確認</label>
-                <input type="password" name="confirm" class="form-control" value={{request.form.confirm}} >
+                    <label>新しいパスワード確認</label>
+                    <input type="password" name="confirm" class="form-control" value={{request.form.confirm}} >
                 </p>
             </div>
         </div>
         <!-- SUBMIT-->
         <div class="button">
             <p>
-                <button type="submit" class="btn btn-primary">登録</button>
+                <button type="submit" class="btn btn-primary">更新</button>
             </p>
         </div>
     </form>
-
 
     <div class="button">
         <p>

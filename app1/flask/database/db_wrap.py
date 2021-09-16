@@ -95,6 +95,19 @@ class WrapDB:
             cursor.close()
         return dict_results
 
+    def put_data(self, table_name, key_name, value_name,usr_id):
+        cursor = self.db.cursor()
+        try:
+            #sql = "UPDATE %s SET %s = %s WHERE id = %s"
+            sql_cmd = "update {} set {} = %s where id = %s".format(table_name,key_name)
+            print(sql_cmd)
+            cursor.execute(sql_cmd,(value_name,usr_id))
+            #cursor.execute(sql,(table_name,key_name,value_name,usr_id))
+            self.db.commit()
+            #result = cursor.execute(sql_cmd)
+        finally:
+            cursor.close()
+
     def get_data(self, table_name, key_name, value_name):
         cursor = self.db.cursor()
         try:
@@ -112,3 +125,15 @@ class WrapDB:
         finally:
             cursor.close()
         return data
+
+    def del_usr(self, table_name, key_name, value_name):
+        cursor = self.db.cursor()
+        result = "ok"
+        try:
+            sql_cmd = "delete from {} where {} = %s".format(table_name,key_name)
+            cursor.execute(sql_cmd, (value_name))
+            self.db.commit()
+        except Exception as e:
+            result = e
+        finally:
+            cursor.close()
